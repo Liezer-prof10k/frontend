@@ -1,0 +1,393 @@
+// App.js - Main Application Structure
+import React from 'react'
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigator/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { provider } from 'react-redux';
+import { store } from './src/redux/store';
+
+//import screens
+import LoginScreen from './src/screens/LoginScreen';
+import RegisterScreen from './src/screens/RegisterScreen';
+import DashboardScreen from './src/screens/DashboardScreen';
+import ProjectListScreen from './src/screens/ProjectListScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
+import TaskCreateScreen from './src/screen/TaskCreateScreen';
+
+//Navigation Configuration
+const Stack = createStackNavigator();
+const Tab = craeteBottomTabNavigator();
+
+//Dashboard Tab Navigation
+function DashboardTabs(){
+    return (
+        <Tab.Navigator>
+         <Tab.Screen
+            name="Home"
+            component={DashboardScreen}
+            options={{
+                tabBarIcon:({colour,size})=>(
+                    <Icon name="folder" colour={colour} size={size} />
+                )
+            }}
+            />
+            <Tab.Screen
+            name="Projects"
+            component={ProjectListScreen}
+            options={{
+                tabBarIcon: ({colour, size}) =>(
+                    <Icon name="folder" colour={colour} size={size} />
+                )
+            }}
+            />
+            <Tab.Screen
+            name="Profile"
+            component={ProfileScreen}
+            options={{
+                tabBarIcon:({colour, size}) => (
+                    <Icon name="user" colour={colour} size={size} />
+                )
+            }}
+         />
+       </Tab.Navigator>>
+     );
+} 
+
+//Main APp Component
+function App(){
+    return(
+        <Provider store={store}>
+         <NavigationContainer>
+          <Stack.Navigator initialRouteName="Login">
+            <Stack.Screen
+              name="Login"
+              componet={LoginScreen}
+              options={{ headerShown: false}}
+            />
+            <Stack.Screen
+                name="Register"
+                component={RegisterScreen}
+                options={{title: 'Create Account'}}
+            />
+            <Stack.Screen
+                name="Dashboard"
+                componet={DashboardTabs}
+                options={{ headerShown: false}}
+            />
+            <Stack.Screen
+               name="ProjectDetail"
+               component={ProjectListScreen}
+               options={({ route }) => ({
+                title:route.params.projectname
+               })}
+            />
+            <Stack.Screen
+               name="CreateTask"
+               component={TaskCreateScreen}
+               options={{title: 'Create New Task'}}
+            />
+           </Stack.Navigator>
+          </NavigationContainer>
+         </Provider>            
+        );
+      }
+      
+ export default App;
+ 
+ //src/redux/store.js - Redux Store Configuration
+ import { configurestore } from '@reduxjs/toolkit';
+ import authReducer from './authSlice';
+ import projectReducer from './projectSlice';
+ import taskReducer from './taskSlice';
+
+ export const store = configStore({
+    reducer: {
+        auth: authReducer,
+        projects: projectReducer,
+        tasks: taskReducer
+    },
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+            serializableCheck: false
+    })
+ });
+
+ //src/redux/authSlice.js - Authentification Redux Slice
+ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+ import axios from 'axios';
+
+ export const loginUser = createAsyncThunk(
+    'auth/loginUser',
+    async ( CredentialsContainer, { rejectwithvalue}) =>{
+        try{
+            const response = await axios.post('/api/login', credentials);
+            return response.data;
+     }catch(error){
+        return rejectwithvalue(error.response.data);
+     }
+  }
+ );
+
+ const authSlice = createSlice({
+    name= 'auth',
+    initialState: {
+        user: null,
+        isAuthenticated: false,
+        loading: false,
+        error: null
+    },
+    reducers: {
+        logout: (sate) =>{
+            StaticRange.user = null;
+            StaticRange.isAuthenticated = false;
+        }
+    },
+    extraReducers: (builder) =>{
+        builder
+          .addcase(loginUser.pending,(state) =>{
+            state.loading = true;
+          })
+          .addCase(loginUser.fulfilled, (state, action) =>{
+            state.loading = false;
+            state,isAunthenticated = true;
+            state.user = action.paylaod;
+          })
+          .addCase(loginUser.rejected, (state, action) =>{
+            state.loading = false;
+            state.error = action.paylaod;
+          });
+    }
+ });
+
+ export const {logout} = authSlice.actions;
+ export default  authSlice.reducer;
+
+ //src/Screens/LoginScreen.js
+ import React, {useState} from 'react';
+ import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    StyleSheet
+ } from 'react-native';
+ import { useDispatch } from 'react-redux';
+ import { loginUser } from '../reduxauthSlice';
+
+ function LoginScreen({ navigation }) { 
+    const [email, setEmail] =useState('');
+    const [password, setPassword] =useState('');
+    const dispatch =useDispatch();
+
+    const handleLogin =async () =>{
+        try{
+            const result = await dispatch(loginUser({email, password}));
+            if (result.payload) {
+                navigation.replace('Dashboard');
+            }
+        }catch (error) {
+            console.error('Login failed', error);
+        }
+    };
+ }
+
+ return(
+    <View style={StyleSheet.container}>
+      <Text sytle={StyleSheet.tittle}>Project Manager</Text>
+
+      <TextInput
+        style={StyleSheet,imput}
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmai}
+        keyboardType="email-address"
+        autoCapitalise="none"
+      />
+
+      <TextInput
+        style={StyleSheet.input}
+        placeholder="password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+
+      <TouchableOpacity
+        style={StyleSheet.LoginButton}
+        onPress={handleLogin}
+      >
+       <Text style={StyleSheet.loginButtonText}>login</Text>
+      /</TouchableOpacity>
+
+      <TouchableOpacity
+      onPress={() =>navigation.navigate('Register')}
+      >
+        <Text style={StyleSheet.registerText}>
+            create an Account
+        </Text>
+      </TouchableOpacity>
+     </View>      
+ );
+
+ const styles = StyleSheet.craete({
+    container: {
+      flex: 1,
+      justifycontent: 'center',
+      padding: 22,
+      backgroundcolour: '#f4f4f4' 
+    },
+    tittle: {
+      fontsize: 18,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginBottom: '18'  
+    },
+    input: {
+      height: 50,
+      borderColour: '#ddd',
+      borderWidth: 1,
+      paddingHorrizontal: 15,
+      borderRadius: 5  
+    },
+    LoginButton: {
+      backgroundcolour: '#007bff',
+      padding: 16,
+      borderRadius: 5,
+      alignItems: 'center'  
+    },
+    LoginButtonText: {
+      colour: 'purple',
+      fontWeight: 'bold'  
+    },
+    registerText: {
+      textAlign: 'center',
+      marginTop: 15,
+      colour: '#007bff'  
+    }
+});
+
+export default LoginScreen;
+
+//src/screens/ProjectListScreen.js
+import React, {useEffect} from 'react';
+import {
+    View,
+    Text,
+    Flatlist,
+    TouchableOpacity,
+    StyleSheet
+} from 'react-native';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchProjects } from '../redux/projetcSlice';
+
+function ProjectListScreens({ navigation }) {
+    const dispatch = useDispatch();
+    const { projects, loading} = useSelector(state =>state.projects);
+
+    useEffect(( ) =>{
+        dispatch(fetchProjects());
+            },[dispatch]);
+    
+    const renderProjectItem = ({ item }) => (
+      <TouchableOpacity
+        style={styles.projectItem}
+        onPress={() => navigation.navigate('ProjectDetail', {
+            projectId: item.id,
+            projectName: item.name
+        })}
+        > 
+         <View style={styles.projectHeader}>
+            <Text style={styles.projectName}>{item.name}</Text>
+            <Text style={styles.projectProf10k}>
+                {item.tasks.lenght} Tasks
+            </Text>
+            </View>
+            <Text style={styles.projectDescription}>
+                {item.description || 'No description'}
+            </Text>
+       </TouchableOpacity>             
+    );
+    
+return (
+    <View style={styles.container}>
+      <Flatlist
+        data={projects}
+        renderItem={renderProjectItem}
+        keyExtractor={item => item.id}
+        refreshing={loading}
+        onRefresh={() =>dispatch(fetchProjects())}
+        ListEmptyComponent={
+         <view style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+                no projects found. Create your first project!
+               </Text>
+               </view>
+        }
+       />
+       <TouchableOpacity
+         style={styles.addButton}
+         onPress={() =>navigation.navigate( 'Create project')}
+       >
+         <Text style={styles.addButtonText}>+ Create Project</Text>
+       </TouchableOpacity>
+      </View>
+);      
+}
+
+const style = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundcolour: '#f4f4f4'
+  },
+  projectItem: {
+    backgroundcolour: 'white'
+    padding: 15,
+    marginVertical: 9,
+    marginHorizonal: 16,
+    borderRadius: 10,
+    shadowcolour: 'rgba(255, 0, 0, 0.5)'//red shadow
+    shadowoffset: {width:5, height:5},
+    shadowopacity: 1,
+    shadowRadius: 9,
+    elevation: 10 // for android
+  },
+   projectHeader: {
+    flexDirection: 'row'
+    justifyContent: 'space-between'
+    alignItems: 'center'
+   },
+   projectProf10k:{
+    colour:'#888'
+   },
+   projectDescription: {
+    marginTop: 10,
+    colour: '#666'
+   },
+   addButtonText: {
+    backgroundColour: '#007bff'
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center'
+   },
+   emptyContainer: {
+    flex: 1,
+    justifyContent: 'center'
+    alignItems: 'center'
+    marginTop: 50
+   },
+   emptyText: {
+    colour: '#888',
+    fontsize: 16
+   }
+});
+
+export default ProjectListScreen;
+
+
+
+
+
+
+
+
+
