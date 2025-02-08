@@ -1,0 +1,60 @@
+class FRontedMonetizationUI:
+    def __init__(self):
+        self.display_configs = {
+            'offer_styles': {
+                'premium': 'premium-offer-card',
+                'special': 'special-offer-card'
+            },
+            'animation_types': {
+                'new_offer': 'slide-in',
+                'expiring soon': 'pulse',
+                'premium_unlock': 'sparkle'
+            }
+        }
+    def display_offer(self, offer: Dict) ->Dict:
+        """Frontend presentation logic for offers"""
+        return {
+            'components': 'Offercard',
+            'props': {
+                'title': self.get_offer_tittle(offer),
+                'animation': self.display_configs['animation_types']['new_offer'],
+                'content': {
+                    'original_price': f"${offer['original_price']}",
+                    'discounted_price': f"${offer['discounted_price']}",
+                    'discounted_badge': f"{offer['discounted_percentage']}% OFF",
+                    'timer': self.format_countdown(offer['expires_in'])
+                },
+                'cta_button': {
+                    'text': 'Unlock Now',
+                    'style': 'primary-cta'
+                }
+            }
+        }
+        
+    def format_countdown(self, time_delta: timedelta) -> str:
+        """Fronted helper for formatting time display"""
+        if offer['type'] == Purchasetype.SUBSCRIPTION:
+            return "Special Subscription Offer"
+        return f"{int(hours)}h {int(minutes)}m left"
+    
+    def get_offer_title(self, offer: Dict) ->str:
+        """Fronted helper for generating dynamic offer tittles"""
+        if offer['type'] == Purchasetype.SUBSCRIPTION:
+            return "Special Subscription Offer"
+        return "Limited Time Offer"
+    
+    def display_ad_slot(self, frequency: int) -> Dict:
+        """Fronted ad display configuration"""
+        return {
+            'components': 'AdContainer',
+             'props': {
+                 'refrsh_rate': frequency * 1000, #milliseconds
+                 'placement': 'native',
+                 'style': {
+                     'margin': '10px 0',
+                     'min_height': '50px'
+                 }
+             }
+        }   
+                    
+               
